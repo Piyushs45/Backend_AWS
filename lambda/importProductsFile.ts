@@ -3,7 +3,7 @@ import { S3 } from 'aws-sdk';
 const s3 = new S3();
 
 export async function handler(event: any) {
-  const fileName = event.queryStringParameters?.fileName;
+  const fileName = event.queryStringParameters?.fileName.trim();
 
   if (!fileName) {
     return {
