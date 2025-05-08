@@ -22,7 +22,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-
+# Build output
+dist/
+build/
 
 # Test coverage
 coverage/
