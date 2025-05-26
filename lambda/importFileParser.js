@@ -1,0 +1,37 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+const AWS = require("aws-sdk");
+const csv = require("csv-parser");
+const s3 = new AWS.S3();
+const handler = async (event) => {
+    for (const record of event.Records) {
+        const bucket = record.s3.bucket.name;
+        const key = record.s3.object.key;
+        console.log(`Parsing file from bucket: ${bucket}, key: ${key}`);
+        const params = {
+            Bucket: bucket,
+            Key: key,
+        };
+        // Create S3 object read stream
+        const s3Stream = s3.getObject(params).createReadStream();
+        // Wrap stream processing in a promise for async/await
+        await new Promise((resolve, reject) => {
+            s3Stream
+                .pipe(csv())
+                .on('data', (data) => {
+                console.log('Parsed row:', data);
+            })
+                .on('end', () => {
+                console.log('File parsing completed.');
+                resolve();
+            })
+                .on('error', (err) => {
+                console.error('Stream error:', err);
+                reject(err);
+            });
+        });
+    }
+};
+exports.handler = handler;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW1wb3J0RmlsZVBhcnNlci5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbImltcG9ydEZpbGVQYXJzZXIudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7O0FBQ0EsK0JBQStCO0FBQy9CLGtDQUFrQztBQUVsQyxNQUFNLEVBQUUsR0FBRyxJQUFJLEdBQUcsQ0FBQyxFQUFFLEVBQUUsQ0FBQztBQUVqQixNQUFNLE9BQU8sR0FBRyxLQUFLLEVBQUUsS0FBYyxFQUFpQixFQUFFO0lBQzdELEtBQUssTUFBTSxNQUFNLElBQUksS0FBSyxDQUFDLE9BQU8sRUFBRSxDQUFDO1FBQ25DLE1BQU0sTUFBTSxHQUFHLE1BQU0sQ0FBQyxFQUFFLENBQUMsTUFBTSxDQUFDLElBQUksQ0FBQztRQUNyQyxNQUFNLEdBQUcsR0FBRyxNQUFNLENBQUMsRUFBRSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUM7UUFFakMsT0FBTyxDQUFDLEdBQUcsQ0FBQyw2QkFBNkIsTUFBTSxVQUFVLEdBQUcsRUFBRSxDQUFDLENBQUM7UUFFaEUsTUFBTSxNQUFNLEdBQUc7WUFDYixNQUFNLEVBQUUsTUFBTTtZQUNkLEdBQUcsRUFBRSxHQUFHO1NBQ1QsQ0FBQztRQUVGLCtCQUErQjtRQUMvQixNQUFNLFFBQVEsR0FBRyxFQUFFLENBQUMsU0FBUyxDQUFDLE1BQU0sQ0FBQyxDQUFDLGdCQUFnQixFQUFFLENBQUM7UUFFekQsc0RBQXNEO1FBQ3RELE1BQU0sSUFBSSxPQUFPLENBQU8sQ0FBQyxPQUFPLEVBQUUsTUFBTSxFQUFFLEVBQUU7WUFDMUMsUUFBUTtpQkFDTCxJQUFJLENBQUMsR0FBRyxFQUFFLENBQUM7aUJBQ1gsRUFBRSxDQUFDLE1BQU0sRUFBRSxDQUFDLElBQUksRUFBRSxFQUFFO2dCQUNuQixPQUFPLENBQUMsR0FBRyxDQUFDLGFBQWEsRUFBRSxJQUFJLENBQUMsQ0FBQztZQUNuQyxDQUFDLENBQUM7aUJBQ0QsRUFBRSxDQUFDLEtBQUssRUFBRSxHQUFHLEVBQUU7Z0JBQ2QsT0FBTyxDQUFDLEdBQUcsQ0FBQyx5QkFBeUIsQ0FBQyxDQUFDO2dCQUN2QyxPQUFPLEVBQUUsQ0FBQztZQUNaLENBQUMsQ0FBQztpQkFDRCxFQUFFLENBQUMsT0FBTyxFQUFFLENBQUMsR0FBRyxFQUFFLEVBQUU7Z0JBQ25CLE9BQU8sQ0FBQyxLQUFLLENBQUMsZUFBZSxFQUFFLEdBQUcsQ0FBQyxDQUFDO2dCQUNwQyxNQUFNLENBQUMsR0FBRyxDQUFDLENBQUM7WUFDZCxDQUFDLENBQUMsQ0FBQztRQUNQLENBQUMsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztBQUNILENBQUMsQ0FBQztBQWhDVyxRQUFBLE9BQU8sV0FnQ2xCIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgUzNFdmVudCB9IGZyb20gJ2F3cy1sYW1iZGEnO1xuaW1wb3J0ICogYXMgQVdTIGZyb20gJ2F3cy1zZGsnO1xuaW1wb3J0ICogYXMgY3N2IGZyb20gJ2Nzdi1wYXJzZXInO1xuXG5jb25zdCBzMyA9IG5ldyBBV1MuUzMoKTtcblxuZXhwb3J0IGNvbnN0IGhhbmRsZXIgPSBhc3luYyAoZXZlbnQ6IFMzRXZlbnQpOiBQcm9taXNlPHZvaWQ+ID0+IHtcbiAgZm9yIChjb25zdCByZWNvcmQgb2YgZXZlbnQuUmVjb3Jkcykge1xuICAgIGNvbnN0IGJ1Y2tldCA9IHJlY29yZC5zMy5idWNrZXQubmFtZTtcbiAgICBjb25zdCBrZXkgPSByZWNvcmQuczMub2JqZWN0LmtleTtcblxuICAgIGNvbnNvbGUubG9nKGBQYXJzaW5nIGZpbGUgZnJvbSBidWNrZXQ6ICR7YnVja2V0fSwga2V5OiAke2tleX1gKTtcblxuICAgIGNvbnN0IHBhcmFtcyA9IHtcbiAgICAgIEJ1Y2tldDogYnVja2V0LFxuICAgICAgS2V5OiBrZXksXG4gICAgfTtcblxuICAgIC8vIENyZWF0ZSBTMyBvYmplY3QgcmVhZCBzdHJlYW1cbiAgICBjb25zdCBzM1N0cmVhbSA9IHMzLmdldE9iamVjdChwYXJhbXMpLmNyZWF0ZVJlYWRTdHJlYW0oKTtcblxuICAgIC8vIFdyYXAgc3RyZWFtIHByb2Nlc3NpbmcgaW4gYSBwcm9taXNlIGZvciBhc3luYy9hd2FpdFxuICAgIGF3YWl0IG5ldyBQcm9taXNlPHZvaWQ+KChyZXNvbHZlLCByZWplY3QpID0+IHtcbiAgICAgIHMzU3RyZWFtXG4gICAgICAgIC5waXBlKGNzdigpKVxuICAgICAgICAub24oJ2RhdGEnLCAoZGF0YSkgPT4ge1xuICAgICAgICAgIGNvbnNvbGUubG9nKCdQYXJzZWQgcm93OicsIGRhdGEpO1xuICAgICAgICB9KVxuICAgICAgICAub24oJ2VuZCcsICgpID0+IHtcbiAgICAgICAgICBjb25zb2xlLmxvZygnRmlsZSBwYXJzaW5nIGNvbXBsZXRlZC4nKTtcbiAgICAgICAgICByZXNvbHZlKCk7XG4gICAgICAgIH0pXG4gICAgICAgIC5vbignZXJyb3InLCAoZXJyKSA9PiB7XG4gICAgICAgICAgY29uc29sZS5lcnJvcignU3RyZWFtIGVycm9yOicsIGVycik7XG4gICAgICAgICAgcmVqZWN0KGVycik7XG4gICAgICAgIH0pO1xuICAgIH0pO1xuICB9XG59O1xuIl19
