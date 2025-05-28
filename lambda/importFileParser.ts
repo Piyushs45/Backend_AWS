@@ -1,39 +1,53 @@
 import { S3Event } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
-import * as csv from 'csv-parser';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import * as csvParser from 'csv-parser';
+import { Readable } from 'stream';
 
-const s3 = new AWS.S3();
+const s3 = new S3Client({ region: 'us-east-1' });
+const sqs = new SQSClient({ region: 'us-east-1' });
+
+const QUEUE_URL = 'https://sqs.us-east-1.amazonaws.com/256443123887/catalogItemsQueue';
+
+if (!QUEUE_URL) {
+  throw new Error('CATALOG_ITEMS_QUEUE_URL environment variable is not set');
+}
 
 export const handler = async (event: S3Event): Promise<void> => {
   for (const record of event.Records) {
-    const bucket = record.s3.bucket.name;
-    const key = record.s3.object.key;
-
-    console.log(`Parsing file from bucket: ${bucket}, key: ${key}`);
-
     const params = {
-      Bucket: bucket,
-      Key: key,
+      Bucket: record.s3.bucket.name,
+      Key: record.s3.object.key,
     };
 
-    // Create S3 object read stream
-    const s3Stream = s3.getObject(params).createReadStream();
+    console.log(`Processing file from S3: ${params.Bucket}/${params.Key}`);
 
-    // Wrap stream processing in a promise for async/await
-    await new Promise<void>((resolve, reject) => {
-      s3Stream
-        .pipe(csv())
+    const s3Object = await s3.send(new GetObjectCommand(params));
+    const stream = s3Object.Body as Readable;
+
+    const messages: Promise<any>[] = [];
+
+    await new Promise((resolve, reject) => {
+      stream
+        .pipe(csvParser())
         .on('data', (data) => {
           console.log('Parsed row:', data);
+          messages.push(
+            sqs.send(
+              new SendMessageCommand({
+                QueueUrl: QUEUE_URL,
+                MessageBody: JSON.stringify(data),
+              })
+            )
+          );
         })
-        .on('end', () => {
-          console.log('File parsing completed.');
-          resolve();
-        })
-        .on('error', (err) => {
-          console.error('Stream error:', err);
-          reject(err);
-        });
+        .on('end', resolve)
+        .on('error', reject);
     });
+
+    // Wait for all SQS messages to be sent
+    await Promise.all(messages);
+
+    console.log(`Finished processing file: ${params.Key}`);
   }
 };

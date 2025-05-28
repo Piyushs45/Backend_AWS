@@ -2,7 +2,9 @@
 import * as cdk from 'aws-cdk-lib';
 import { ProductServiceStack } from '../lib/backend-app-stack';
 import { ImportServiceStack } from '../lib/import-service-stack';
+import { ProductServiceStack2 } from '../lib/product-service-stack';
 
 const app = new cdk.App();
 new ProductServiceStack(app, 'ProductServiceStack');
 new ImportServiceStack(app, 'ImportServiceStack');
+new ProductServiceStack2(app, 'ProductServiceStack2');
