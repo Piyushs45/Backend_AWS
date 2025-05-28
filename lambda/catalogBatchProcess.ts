@@ -1,6 +1,8 @@
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 const sqsClient = new SQSClient({ region: "us-east-1"});
+const snsClient = new SNSClient({ region: 'us-east-1' });
 
 export const handler = async (event: any) => {
   const queueUrl = 'https://sqs.us-east-1.amazonaws.com/256443123887/catalogItemsQueue';
@@ -24,7 +26,13 @@ export const handler = async (event: any) => {
   });
 
   await Promise.all(sendPromises);
-
+ await snsClient.send(
+  new PublishCommand({
+    TopicArn: process.env.SNS_TOPIC_ARN,
+    Subject: 'New Products Created',
+    Message: JSON.stringify('New Products Created'), 
+  })
+);
   return {
     statusCode: 200,
     body: JSON.stringify({ message: 'Messages sent to SQS' }),

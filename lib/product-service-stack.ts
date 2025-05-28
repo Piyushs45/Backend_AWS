@@ -23,7 +23,7 @@ export class ProductServiceStack2 extends cdk.Stack {
     });
 
     createProductTopic.addSubscription(
-      new subscriptions.EmailSubscription('your-email@example.com')
+      new subscriptions.EmailSubscription('sandhanpiyush20@gmail.com')
     );
 
     const catalogBatchProcess = new lambda.Function(this, 'CatalogBatchProcess', {
