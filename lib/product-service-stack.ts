@@ -8,7 +8,7 @@ import * as eventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam'; // <== Make sure this is imported
 
-export class ProductServiceStack2 extends cdk.Stack {
+export class ProductServiceStackTask extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
