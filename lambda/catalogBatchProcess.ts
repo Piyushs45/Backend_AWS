@@ -1,40 +1,44 @@
-import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
-const sqsClient = new SQSClient({ region: "us-east-1"});
+const dynamoClient = new DynamoDBClient({ region: 'us-east-1' });
 const snsClient = new SNSClient({ region: 'us-east-1' });
 
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
+const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
+
 export const handler = async (event: any) => {
-  const queueUrl = 'https://sqs.us-east-1.amazonaws.com/256443123887/catalogItemsQueue';
-  if (!queueUrl) {
-    throw new Error('CATALOG_ITEMS_QUEUE_URL environment variable not set');
-  }
+  console.log('Received event:', JSON.stringify(event, null, 2));
 
-  // Assuming event.records or event.body contains array of items to send
-  const items = JSON.parse(event.body || '[]');
+  const putPromises = event.Records.map(async (record: any) => {
+    const product = JSON.parse(record.body);
+    console.log('Processing product:', product);
 
-  // Send each item as a separate SQS message
-  const sendPromises = items.map(async (item: any) => {
-    const messageBody = JSON.stringify(item);
+    const putCommand = new PutItemCommand({
+      TableName: PRODUCTS_TABLE,
+      Item: {
+        id: { S: product.id },
+        title: { S: product.title },
+        description: { S: product.description },
+        price: { N: product.price.toString() },
+      },
+    });
 
-    return sqsClient.send(
-      new SendMessageCommand({
-        QueueUrl: queueUrl,
-        MessageBody: messageBody,
-      })
-    );
+    await dynamoClient.send(putCommand);
   });
 
-  await Promise.all(sendPromises);
- await snsClient.send(
-  new PublishCommand({
-    TopicArn: process.env.SNS_TOPIC_ARN,
-    Subject: 'New Products Created',
-    Message: JSON.stringify('New Products Created'), 
-  })
-);
+  await Promise.all(putPromises);
+
+  await snsClient.send(
+    new PublishCommand({
+      TopicArn: SNS_TOPIC_ARN,
+      Subject: 'New Products Created',
+      Message: JSON.stringify({ message: 'New products created', count: event.Records.length }),
+    })
+  );
+
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: 'Messages sent to SQS' }),
+    body: JSON.stringify({ message: 'Products created successfully' }),
   };
 };

@@ -1,63 +1,66 @@
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+  Context,
+} from "aws-lambda";
+import { headers } from "./helper"; // Assuming you have a shared headers module
 
 const s3 = new S3Client({ region: process.env.AWS_REGION });
-const bucketName = process.env.BUCKET_NAME || "import-service-demo-bucket";
+const bucketName = process.env.BUCKET_NAME!;
 
-export async function handler(event: any) {
+export const main = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  console.log("API Gateway Event Received:", JSON.stringify(event));
+
+  // Validate the fileName query parameter
+  const fileName = event.queryStringParameters?.fileName;
+  if (!fileName || !fileName.trim()) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        message: "fileName query parameter is required.",
+      }),
+    };
+  }
+
   try {
-    const fileName = event.queryStringParameters?.fileName;
-
-    if (!fileName || !fileName.trim()) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: "fileName query parameter is required",
-        }),
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-        },
-      };
-    }
-
     const trimmedFileName = fileName.trim();
     const key = `uploaded/${trimmedFileName}`;
 
-    const command = new PutObjectCommand({
+    // Generate a signed URL valid for 5 minutes (300 seconds)
+    const putCommand = new PutObjectCommand({
       Bucket: bucketName,
       Key: key,
+      ContentType: "text/csv", // Specify CSV file type
     });
 
-    // Generate signed URL valid for 1 hour (3600 seconds)
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(s3, putCommand, { expiresIn: 300 });
+
+    console.log("Generated Signed URL:", signedUrl);
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({
+        message: "Signed URL generated successfully",
         signedUrl,
       }),
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
     };
   } catch (error: any) {
     console.error("Error generating signed URL:", error);
 
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({
         message: "Failed to generate signed URL",
-        error: error.message,
+        error: error.message || String(error),
       }),
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
     };
   }
-}
+};
