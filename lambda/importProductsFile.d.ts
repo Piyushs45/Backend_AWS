@@ -1,9 +1,2 @@
-export declare function handler(event: any): Promise<{
-    statusCode: number;
-    body: string;
-    headers: {
-        "Access-Control-Allow-Origin": string;
-        "Access-Control-Allow-Headers": string;
-        "Access-Control-Allow-Methods": string;
-    };
-}>;
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+export declare const main: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>;

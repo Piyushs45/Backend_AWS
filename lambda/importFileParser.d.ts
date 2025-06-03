@@ -1,2 +1,2 @@
-import { S3Event } from 'aws-lambda';
-export declare const handler: (event: S3Event) => Promise<void>;
+import { S3Handler } from 'aws-lambda';
+export declare const main: S3Handler;

@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-export declare class ProductServiceStack2 extends cdk.Stack {
+export declare class ProductServiceStackTask extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps);
 }
