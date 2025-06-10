@@ -1,0 +1,1 @@
+export const Auth_Header = "Basic ";
