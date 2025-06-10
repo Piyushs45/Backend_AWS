@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { ProductServiceStack } from '../lib/backend-app-stack';
-import { ImportServiceStack } from '../lib/import-service-stack';
-import { ProductServiceStackTask } from '../lib/product-service-stack';
+import { ProductServiceStack } from '../lib/backend-app/backend-app-stack';
+import { ImportServiceStack } from '../lib/import-service/import-service-stack';
+import { ProductServiceStackTask } from '../lib/product-service/product-service-stack';
 
 const app = new cdk.App();
 new ProductServiceStack(app, 'ProductServiceStack');
